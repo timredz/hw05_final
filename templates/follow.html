@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Обновления любимых авторов{% endblock %}
+{% load thumbnail %}
+
+{% block content %}
+    <div class="container">
+            {% include "menu.html" with index=True %}
+            <h1> Обновления любимых авторов</h1>
+
+                    {% for post in page %}
+                        {% include "includes/post_card.html" with post=post %}
+                    {% endfor %}
+
+    </div>
+    {% if page.has_other_pages %}
+         {% include "includes/paginator.html" with items=page paginator=paginator %}
+    {% endif %}
+
+{% endblock %}
