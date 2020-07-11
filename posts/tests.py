@@ -1,7 +1,11 @@
+import tempfile
 import time
-from django.test import TestCase, Client
+
+from django.test import Client, TestCase
 from django.urls import reverse
-from .models import Post, User, Group, Follow, Comment
+from PIL import Image
+
+from .models import Comment, Follow, Group, Post, User
 
 
 class TestStringMethods(TestCase):
@@ -165,7 +169,10 @@ class TestStringMethods(TestCase):
         )
 
         # Редактируем пост и добавляем картинку
-        with open('posts/file.jpg', 'rb') as img:
+        image_test = Image.new('RGB', (60, 30), color=(73, 109, 137))
+        image_test.save('image_test.png')
+
+        with open('image_test.png', 'rb') as img:
             response = self.auth_client.post(
                 reverse(
                     'post_edit',
@@ -195,26 +202,27 @@ class TestStringMethods(TestCase):
                 resp = self.client.get(url, follow=True)
                 self.assertContains(resp, '<img')
 
-        with open('posts/file.txt', 'rb') as img:
-            response = self.auth_client.post(
-                reverse(
-                    'post_edit',
-                    kwargs={'username': self.user.username, 'post_id': 1}
-                ),
-                {'text': self.post_text, 'group': self.group.id, 'image': img},
-                follow=True
-            )
-            form = response.context['form']
-            errors = form.errors['image']
-            print(errors)
-            # Проверяем что пост с некартинкой вызывает ошибку
-            self.assertFormError(
-                response=response,
-                form='form',
-                field='image',
-                errors=errors,
-                msg_prefix=''
-            )
+        img = tempfile.NamedTemporaryFile()
+        response = self.auth_client.post(
+            reverse(
+                'post_edit',
+                kwargs={'username': self.user.username, 'post_id': 1}
+            ),
+            {'text': self.post_text, 'group': self.group.id, 'image': img},
+            follow=True
+        )
+        form = response.context['form']
+        errors = form.errors['image']
+        print(errors)
+        # Проверяем что пост с некартинкой вызывает ошибку
+        self.assertFormError(
+            response=response,
+            form='form',
+            field='image',
+            errors=errors,
+            msg_prefix=''
+        )
+        img.close()
 
     def test_cache(self):
         # Запрашиваем страницу и кешируем
